@@ -1,8 +1,8 @@
-# 在Docker中搭建Django开发环境
+# 通过Docker搭建开发项目管理服务器
 
 ## 目标
 
-实现Django开发的数据库/项目管理支持Server。
+实现Django开发的项目管理支持Server。
 
 支持Server计划提供如下服务：
 
@@ -46,7 +46,7 @@ docker-compose --version
 
 ## 配置
 
-项目整体文件结构如下所示：
+整体文件结构如下所示：
 
 ```bash
 ProjManSrv
@@ -57,7 +57,7 @@ ProjManSrv
     └── nginx.conf
 ```
 
-容器的外部卷放置在`/srv/devServer`目录下。
+容器的外部卷放置在`/srv/ProjManSrv`目录下。
 
 配置的核心内容为Compose模板文件。compose通过读取该模板配置各容器协同，文件格式为YAML。
 
@@ -70,7 +70,7 @@ redmine-postgresql:
         - DB_PASS=password # change PW here
         - DB_NAME=redmine_production
     volumes:
-        - /srv/devServer/redmine/postgresql:/var/lib/postgresql
+        - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
 
 redmine:
     restart: always
@@ -85,7 +85,7 @@ redmine:
         - SMTP_USER=user # change smtp user here
         - SMTP_PASS=password # change smtp pw here
     volumes:
-        - /srv/devServer/redmine/redmine:/home/redmine/data
+        - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
 
 nginx:
     build: nginx
