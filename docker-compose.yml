@@ -1,0 +1,31 @@
+redmine-postgresql:
+    restart: always
+    image: sameersbn/postgresql:latest
+    environment: 
+        - DB_USER=redmine
+        - DB_PASS=password # change PW here
+        - DB_NAME=redmine_production
+    volumes:
+        - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
+
+redmine:
+    restart: always
+    image: sameersbn/redmine:latest
+    links:
+        - redmine-postgresql:postgresql
+    environment:
+        - REDMINE_PORT=10083
+        - REDMINE_RELATIVE_URL_ROOT=/redmine
+
+        - SMTP_ENABLED=false
+        - SMTP_USER=user # change smtp user here
+        - SMTP_PASS=password # change smtp pw here
+    volumes:
+        - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
+
+nginx:
+    build: nginx
+    links: 
+        - redmine:redmine
+    ports:
+        - "80:80"
