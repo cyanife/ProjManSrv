@@ -1,27 +1,37 @@
 # 在Docker中搭建Django开发环境
+
 ## 目标
+
 实现Django开发的数据库/项目管理支持Server。
 
 支持Server计划提供如下服务：
+
 - PostgreSQL (DB)
 - Redmine (PM)
 - Gitlab (SCM)
 - Jenkins (CI)
 
 为增加复用性与降低运维难度，采用Docker搭建。
+
 ## 环境
+
 Ubuntu Server 18.04 @ VMware (DEV ENV)
+
 ## 准备
+
 按照Docker官方[文档](https://docs.docker.com/install/linux/docker-ce/ubuntu/)安装Docker CE版。
+
 ```bash
 docker -v
 > Docker version 18.03.1-ce, build 9ee9f40
 ```
+
 根据Docker的实现机理，容器的生命周期与主进程一致，即在同一容器内，应只有一个单一的主进程执行，故多服务的场景应通过多个容器协同实现。
 
 采用Docker官方项目Compose实现多容器关联。
 
 同样，根据Docker Compose的官方[文档](https://docs.docker.com/compose/install/)安装Compose。
+
 ```bash
 
 sudo curl -L https://github.com/docker/compose/releases/download/1.22.0-rc2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
@@ -29,12 +39,15 @@ sudo curl -L https://github.com/docker/compose/releases/download/1.22.0-rc2/dock
 sudo chmod +x /usr/local/bin/docker-compose
 # Install command completion
 sudo curl -L https://raw.githubusercontent.com/docker/compose/1.21.2/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
-# Test 
+# Test
 docker-compose --version
 > docker-compose version 1.22.0-rc2, build 6817b533
 ```
-# 配置
+
+## 配置
+
 项目整体文件结构如下所示：
+
 ```bash
 ProjManSrv
 ├── docker-compose.yml
@@ -52,7 +65,7 @@ ProjManSrv
 redmine-postgresql:
     restart: always
     image: sameersbn/postgresql:latest
-    environment: 
+    environment:
         - DB_USER=redmine
         - DB_PASS=password # change PW here
         - DB_NAME=redmine_production
@@ -76,13 +89,14 @@ redmine:
 
 nginx:
     build: nginx
-    links: 
+    links:
         - redmine:redmine
     ports:
         - "80:80"
 ```
 
 通过dockerfile创建nginx容器。
+
 ```dockerfile
 # https://registry.hub.docker.com/_/nginx/
 FROM nginx:latest
@@ -93,7 +107,9 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy project index.html into container
 COPY index.html /usr/share/nginx/html/index.html
 ```
+
 配置nginx反向代理，将各服务绑定至子域名。
+
 ```bash
 user  nginx;
 worker_processes  2;
@@ -153,8 +169,10 @@ http {
   }
 }
 ```
+
 部署
 在项目路径下执行如下指令启动/停止服务。
+
 ```bash
 # start service
 docker-compose up -d
@@ -162,7 +180,9 @@ docker-compose up -d
 docker-compose stop
 
 ```
+
 启动后，访问`http://127.0.0.1`进入项目主页，或直接通过子网址访问对应服务：
+
 - GitLab: http://127.0.0.1/gitlab
 - Redmine: http://127.0.0.1/gitlab
 - Jenkins: http://127.0.0.1/gitlab
