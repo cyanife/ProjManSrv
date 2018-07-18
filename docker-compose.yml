@@ -1,5 +1,5 @@
 redmine-postgresql:
-    restart: always
+    restart: unless-stopped # always for production
     image: sameersbn/postgresql:latest
     environment:
         - DB_USER=redmine
@@ -9,10 +9,10 @@ redmine-postgresql:
         - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
 
 redmine:
-    restart: always
+    restart: unless-stopped # always for production 
     image: sameersbn/redmine:latest
-    links:
-        - redmine-postgresql:postgresql
+    depends_on:
+        - redmine-postgresql
     environment:
         - REDMINE_PORT=10083
         - REDMINE_RELATIVE_URL_ROOT=/redmine
@@ -23,53 +23,10 @@ redmine:
     volumes:
         - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
 
-gitlab-postgresql:
-    restart: always
-    image: sameersbn/postgresql:latest
-    environment:
-        - DB_USER=gitlab
-        - DB_PASS=password # change PW here
-        - DB_NAME=gitlabhq_production
-    volumes:
-        - /srv/ProjManSrv/gitlab/postgresql:/var/lib/postgresql
-
-gitlab:
-    restart: always
-    image: sameersbn/gitlab:latest
-    links:
-        - gitlab-redis:redisio
-        - gitlab-postgresql:postgresql
-    environment:
-        - DEBUG=false
-        - GITLAB_TIMEZONE=Tokyo
-
-        - GITLAB_SECRETS_DB_KEY_BASE=long-and-random-alphanumeric-string
-
-        - GITLAB_RELATIVE_URL_ROOT=/gitlab
-
-        - GITLAB_BACKUP_SCHEDULE=daily
-        - GITLAB_BACKUP_TIME=01:00
-
-        - SMTP_ENABLED=false
-        - SMTP_USER=mailer@example.com
-        - SMTP_PASS=password
-
-        - IMAP_ENABLED=false
-        - IMAP_USER=mailer@example.com
-        - IMAP_PASS=password
-    volumes:
-        - /srv/ProjManSrv/gitlab/gitlab:/home/git/data
-
-gitlab-redis:
-    restart: always
-    image: sameersbn/redis:latest
-    volumes:
-        - /srv/ProjManSrv/gitlab/redis:/var/lib/redis
-
 nginx:
     build: nginx
-    links: 
-        - redmine:redmine
-        - gitlab:gitlab
+    # links: 
+        # - redmine:redmine
+        # - gitlab:gitlab
     ports:
         - "80:80"
