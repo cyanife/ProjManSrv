@@ -61,6 +61,9 @@ ProjManSrv
 
 配置的核心内容为Compose模板文件。compose通过读取该模板配置各容器协同，文件格式为YAML。
 
+要点：Compose1.0以后的版本中，所有容器被自动配置于同一network下，均可互相访问，故新版compose不推荐采用`links`，尽量改用`depends_on`
+但与`links`不同，`depends_on`不会向目标容器注入环境变量，而注入环境变量也已经不被compose文档推荐，故应手动配置数据库名称一类的环境变量。
+
 ```yaml
 redmine-postgresql:
     restart: always
