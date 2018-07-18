@@ -3,34 +3,28 @@ services:
 
     redmine-postgresql:
         restart: unless-stopped # always for production
-        image: sameersbn/postgresql:latest
+        image: postgresql
         environment:
-            - DB_USER=redmine
-            - DB_PASS=password # change PW here
-            - DB_NAME=redmine_production
+            - POSTGRES_USER=redmine
+            - POSTGRES_PASSWORD=password # change PW here
+            - POSTGRES_DB=redmine_production
         volumes:
             - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
 
     redmine:
         restart: unless-stopped # always for production 
-        image: sameersbn/redmine:latest
+        image: redmine
         depends_on:
             - redmine-postgresql
+        ports: 
+            - 10083:3000
         environment:
-            - REDMINE_PORT=10083
-            - REDMINE_RELATIVE_URL_ROOT=/redmine
-             
 
-            - DB_ADAPTER=postgresql
-            - DB_HOST=redmine-postgresql
-            - DB_PORT=5432
-            - DB_USER=redmine
-            - DB_PASS=password # change PW here
-            - DB_NAME=redmine_production
+            - REDMINE_DB_POSTGRES=redmine-postgresql
+            - REDMINE_DB_USERNAME=redmine
+            - REDMINE_DB_PASSWORD=password # change PW here
+            - REDMINE_DB_DATABASE=redmine_production
 
-            - SMTP_ENABLED=false
-            - SMTP_USER=user # change smtp user here
-            - SMTP_PASS=password # change smtp pw here
         volumes:
             - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
 
