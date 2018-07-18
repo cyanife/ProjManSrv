@@ -3,7 +3,7 @@ services:
 
     redmine-postgresql:
         restart: unless-stopped # always for production
-        image: postgresql
+        image: postgres
         environment:
             - POSTGRES_USER=redmine
             - POSTGRES_PASSWORD=password # change PW here
