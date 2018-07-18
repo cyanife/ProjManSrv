@@ -1,4 +1,4 @@
-version: "2"
+version: "3"
 services: 
 
     redmine-postgresql:
@@ -19,6 +19,14 @@ services:
         environment:
             - REDMINE_PORT=10083
             - REDMINE_RELATIVE_URL_ROOT=/redmine
+             
+
+            - DB_ADAPTER=postgresql
+            - DB_HOST=redmine-postgresql
+            - DB_PORT=5432
+            - DB_USER=redmine
+            - DB_PASS=password # change PW here
+            - DB_NAME=redmine_production
 
             - SMTP_ENABLED=false
             - SMTP_USER=user # change smtp user here
