@@ -1,32 +1,35 @@
-redmine-postgresql:
-    restart: unless-stopped # always for production
-    image: sameersbn/postgresql:latest
-    environment:
-        - DB_USER=redmine
-        - DB_PASS=password # change PW here
-        - DB_NAME=redmine_production
-    volumes:
-        - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
+version: "2"
+services: 
 
-redmine:
-    restart: unless-stopped # always for production 
-    image: sameersbn/redmine:latest
-    depends_on:
-        - redmine-postgresql
-    environment:
-        - REDMINE_PORT=10083
-        - REDMINE_RELATIVE_URL_ROOT=/redmine
+    redmine-postgresql:
+        restart: unless-stopped # always for production
+        image: sameersbn/postgresql:latest
+        environment:
+            - DB_USER=redmine
+            - DB_PASS=password # change PW here
+            - DB_NAME=redmine_production
+        volumes:
+            - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
 
-        - SMTP_ENABLED=false
-        - SMTP_USER=user # change smtp user here
-        - SMTP_PASS=password # change smtp pw here
-    volumes:
-        - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
+    redmine:
+        restart: unless-stopped # always for production 
+        image: sameersbn/redmine:latest
+        depends_on:
+            - redmine-postgresql
+        environment:
+            - REDMINE_PORT=10083
+            - REDMINE_RELATIVE_URL_ROOT=/redmine
 
-nginx:
-    build: nginx
-    # links: 
-        # - redmine:redmine
-        # - gitlab:gitlab
-    ports:
-        - "80:80"
+            - SMTP_ENABLED=false
+            - SMTP_USER=user # change smtp user here
+            - SMTP_PASS=password # change smtp pw here
+        volumes:
+            - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
+
+    nginx:
+        build: nginx
+        # links: 
+            # - redmine:redmine
+            # - gitlab:gitlab
+        ports:
+            - "80:80"
