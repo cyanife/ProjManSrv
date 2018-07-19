@@ -9,30 +9,36 @@ services:
             - POSTGRES_PASSWORD=password # change PW here
             - POSTGRES_DB=redmine_production
         volumes:
+            # - ./data/redmine/postgresql:/var/lib/postgresql
             - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
 
     redmine:
         restart: unless-stopped # always for production 
-        image: redmine
+        image: sameersbn/redmine:latest
         depends_on:
             - redmine-postgresql
         ports: 
-            - 10083:3000
+            - "10083:80"
         environment:
 
-            - REDMINE_DB_POSTGRES=redmine-postgresql
-            - REDMINE_DB_USERNAME=redmine
-            - REDMINE_DB_PASSWORD=password # change PW here
-            - REDMINE_DB_DATABASE=redmine_production
+            - REDMINE_RELATIVE_URL_ROOT=/redmine
+            - DB_ADAPTER=postgresql
+            - DB_HOST=redmine-postgresql
+            - DB_USER=redmine
+            - DB_PASS=password # change PW here
+            - DB_NAME=redmine_production
 
         volumes:
-            - /srv/ProjManSrv/redmine/redmine:/usr/src/redmine/files
+            - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
+            # - ./data/redmine/redmine:/home/redmine/data
 
     nginx:
         restart: unless-stopped
-        build: nginx
+        # build: nginx
+        image: nginx
         volumes:
             - ./nginx/html:/usr/share/nginx/html
+            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
         # links: 
             # - redmine:redmine
             # - gitlab:gitlab
