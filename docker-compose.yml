@@ -29,7 +29,10 @@ services:
             - /srv/ProjManSrv/redmine/redmine:/usr/src/redmine/files
 
     nginx:
+        restart: unless-stopped
         build: nginx
+        volumes:
+            - nginx/html:/usr/share/nginx/html
         # links: 
             # - redmine:redmine
             # - gitlab:gitlab

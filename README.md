@@ -113,6 +113,10 @@ COPY index.html /usr/share/nginx/html/index.html
 
 配置nginx反向代理，将各服务绑定至子域名。
 
+注意，nginx同样运行在容器中，此时nginx中的localhost/127.0.0.1为容器的回环地址，而不是其他容器端口绑定的宿主机！
+
+在compose中所有容器具有独立网络栈（默认bridge配置下）并处于同一虚拟network中，可互相访问（TCP），故反向代理地址应为其他容器主机名:端口形式。
+
 ```bash
 user  nginx;
 worker_processes  2;
