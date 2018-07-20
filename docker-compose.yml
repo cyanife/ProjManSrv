@@ -10,15 +10,12 @@ services:
             - POSTGRES_DB=redmine_production
         volumes:
             - ./data/redmine/postgresql:/var/lib/postgresql/data
-            # - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
 
     redmine:
         restart: unless-stopped # always for production 
         image: sameersbn/redmine:latest
         depends_on:
             - redmine-postgresql
-        # ports: 
-            # - "10083:80"
         environment:
 
             - REDMINE_RELATIVE_URL_ROOT=/redmine
@@ -33,10 +30,9 @@ services:
             - SMTP_PASS=password
 
         volumes:
-            # - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
             - ./data/redmine/redmine:/home/redmine/data
     
-    db:
+    db: # gitea database hostname should be "db"
         restart: unless-stopped # always for production
         image: postgres:latest
         environment:

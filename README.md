@@ -51,10 +51,12 @@ docker-compose --version
 ```bash
 ProjManSrv
 ├── docker-compose.yml
-└── nginx
-    ├── Dockerfile
-    ├── index.html
-    └── nginx.conf
+├── gitea-ssh.sh
+├── nginx
+│   ├── html
+│   │   └── index.html
+│   └── nginx.conf
+└── README.md
 ```
 
 容器的外部卷放置在`/srv/ProjManSrv`目录下。
@@ -65,50 +67,78 @@ ProjManSrv
 但与`links`不同，`depends_on`不会向目标容器注入环境变量，而注入环境变量也已经不被compose文档推荐，故应手动配置数据库名称一类的环境变量。
 
 ```yaml
-redmine-postgresql:
-    restart: always
-    image: sameersbn/postgresql:latest
-    environment:
-        - DB_USER=redmine
-        - DB_PASS=password # change PW here
-        - DB_NAME=redmine_production
-    volumes:
-        - /srv/ProjManSrv/redmine/postgresql:/var/lib/postgresql
+version: "3"
+services:
 
-redmine:
-    restart: always
-    image: sameersbn/redmine:latest
-    links:
-        - redmine-postgresql:postgresql
-    environment:
-        - REDMINE_PORT=10083
-        - REDMINE_RELATIVE_URL_ROOT=/redmine
+    redmine-postgresql:
+        restart: unless-stopped # always for production
+        image: postgres:latest
+        environment:
+            - POSTGRES_USER=redmine
+            - POSTGRES_PASSWORD=password # change PW here
+            - POSTGRES_DB=redmine_production
+        volumes:
+            - ./data/redmine/postgresql:/var/lib/postgresql/data
 
-        - SMTP_ENABLED=false
-        - SMTP_USER=user # change smtp user here
-        - SMTP_PASS=password # change smtp pw here
-    volumes:
-        - /srv/ProjManSrv/redmine/redmine:/home/redmine/data
+    redmine:
+        restart: unless-stopped # always for production
+        image: sameersbn/redmine:latest
+        depends_on:
+            - redmine-postgresql
+        environment:
 
-nginx:
-    build: nginx
-    links:
-        - redmine:redmine
-    ports:
-        - "80:80"
-```
+            - REDMINE_RELATIVE_URL_ROOT=/redmine
+            - DB_ADAPTER=postgresql
+            - DB_HOST=redmine-postgresql
+            - DB_USER=redmine
+            - DB_PASS=password # change PW here
+            - DB_NAME=redmine_production
 
-通过dockerfile创建nginx容器。
+            - SMTP_ENABLED=false
+            - SMTP_USER=mailer@example.com
+            - SMTP_PASS=password
 
-```dockerfile
-# https://registry.hub.docker.com/_/nginx/
-FROM nginx:latest
+        volumes:
+            - ./data/redmine/redmine:/home/redmine/data
 
-# Copy customized nginx config file into container
-COPY nginx.conf /etc/nginx/nginx.conf
+    db: # gitea database hostname should be "db"
+        restart: unless-stopped # always for production
+        image: postgres:latest
+        environment:
+            - POSTGRES_USER=gitea
+            - POSTGRES_PASSWORD=password # change PW here
+            - POSTGRES_DB=gitea
+        volumes:
+            - ./data/gitea/postgresql:/var/lib/postgresql/data
 
-# Copy project index.html into container
-COPY index.html /usr/share/nginx/html/index.html
+    gitea:
+        restart: 'unless-stopped'
+        image: 'gitea/gitea:latest'
+        depends_on:
+            - db
+        ports:
+            - '127.0.0.1:10022:22'
+        volumes:
+            - ./data/gitea/gitea:/data
+            - /home/git/.ssh:/data/git/.ssh
+        environment:
+            - USER_UID=${GIT_UID}
+            - USER_GID=${GIT_GID}
+            - DB_TYPE=postgres
+            - DB_HOST=db
+            - DB_NAME=gitea
+            - DB_USER=gitea
+            - DB_PASSWORD=password
+            - ROOT_URL=/gitea/
+
+    nginx:
+        restart: unless-stopped
+        image: nginx
+        volumes:
+            - ./nginx/html:/usr/share/nginx/html
+            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+        ports:
+            - "80:80"
 ```
 
 配置nginx反向代理，将各服务绑定至子域名。
@@ -117,65 +147,45 @@ COPY index.html /usr/share/nginx/html/index.html
 
 在compose中所有容器具有独立网络栈（默认bridge配置下）并处于同一虚拟network中，可互相访问（TCP），故反向代理地址应为其他容器主机名:端口形式。
 
-```bash
-user  nginx;
-worker_processes  2;
+```nginx
+    server {
+        listen 80;
 
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
+        # static-html
+        location / {
+            index index.html;
+            root /usr/share/nginx/html;
+        }
 
-events {
-  worker_connections  1024;
-}
+        location /redmine {
+            proxy_pass         http://redmine;
+            proxy_redirect     off;
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $server_name;
+            proxy_set_header   X-NginX-Proxy true;
 
-http {
-  include  /etc/nginx/mime.types;
-  default_type  application/octet-stream;
+        }
 
-  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
-                    '"$http_user_agent" "$http_x_forwarded_for"';
-  access_log  /var/log/nginx/access.log  main;
+        location /gitea {
+            rewrite ^ /gitea/ last;
+        }
 
-  sendfile           on;
-  keepalive_timeout  65;
-  server_tokens      off;
+        location /gitea/ { #remind trailing slash here!
+            proxy_pass         http://gitea:3000/;
+            proxy_redirect     off;
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $server_name;
+            proxy_set_header   X-NginX-Proxy true;
 
-  server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name 127.0.0.1;
-    # charset koi8-r;
-
-    client_max_body_size 1024M;
-
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-Proto http;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-NginX-Proxy true;
-
-    # static-html
-    location / {
-      index index.html;
-      root /usr/share/nginx/html;
+        }
     }
-    # gitlab
-    location /gitlab {
-      proxy_pass http://gitlab;
-    }
-    # redmine
-    location /redmine {
-      proxy_pass http://redmine;
-    }
-    # jenkins
-    location /jenkins {
-      proxy_pass http://jenkins:8080;
-    }
-  }
-}
 ```
+
+TODO gitea-ssh.sh
 
 部署
 在项目路径下执行如下指令启动/停止服务。
