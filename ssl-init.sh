@@ -1,6 +1,6 @@
 #!/bin/bash
 finished=false
-container_name=acme.sh
+container_name=acme.sh-srv
 
 if [ ! "$(docker ps -q -f name=${container_name})" ]; then
     echo "Please run acme.sh container first!"
@@ -43,5 +43,5 @@ do
         esac
     fi
 done
-docker exec acme.sh  --issue -d cyanife.com  -d '*.cyanife.com'  --dns dns_dp
+docker exec ${container_name} --issue -d cyanife.com -d '*.cyanife.com' --dns dns_dp
 (crontab -l ; echo "0 4 1 */2 * cd $(dirname $(readlink -f $0)) && docker-compose exec nginx nginx -s reload") | crontab -

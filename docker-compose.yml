@@ -4,6 +4,7 @@ services:
     db: # gitea database hostname should be "db"
         restart: always # always for production
         image: postgres:latest
+        container_name: gitea-app-db
         environment:
             - POSTGRES_USER=gitea
             - POSTGRES_PASSWORD=password # change PW here
@@ -16,6 +17,7 @@ services:
     gitea:
         restart: always 
         image: gitea/gitea:latest
+        container_name: gitea-app
         depends_on:
             - db 
         ports:
@@ -39,6 +41,7 @@ services:
     wekandb:
         restart: always
         image: mongo:latest
+        container_name: wekan-app-db
         command: mongod --smallfiles --oplogSize 128
         networks:
           - internal-tier 
@@ -68,6 +71,7 @@ services:
     nginx:
         restart: always 
         image: nginx
+        container_name: nginx-srv
         volumes:
             - ./nginx/html:/usr/share/nginx/html
             - ./nginx/conf.d:/etc/nginx/conf.d
@@ -81,6 +85,7 @@ services:
 
     acme-sh:
         image: neilpang/acme.sh
+        container_name: acme.sh-srv
         command: daemon
         volumes:
             - ./nginx/acme.sh:/acme.sh
