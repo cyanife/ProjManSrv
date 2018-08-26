@@ -43,5 +43,5 @@ do
         esac
     fi
 done
-docker exec --env DP_Id="${DP_Id}" DP_Key="${DP_Key}" ${container_name} --issue -d cyanife.com -d '*.cyanife.com' --dns dns_dp
+docker exec --env DP_Id=${DP_Id} DP_Key=${DP_Key} ${container_name} --issue -d cyanife.com -d '*.cyanife.com' --dns dns_dp
 (crontab -l ; echo "0 4 1 */2 * cd $(dirname $(readlink -f $0)) && docker-compose exec nginx nginx -s reload") | crontab -
