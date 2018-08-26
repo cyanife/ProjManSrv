@@ -15,13 +15,18 @@ do
     read -r DP_Key
 
     if [ -z "$DP_Id" ] || [ -z "$DP_Key" ]; then 
-        echo "Invaild input value!"
+    echo "DNSPOD API token environment variables has not been set!"
+    echo "Please set them manually before initialization."
+    echo "Example:"
+    echo 'export DP_Id="1234"'
+    echo 'export DP_Key="sADDsdasdgdsf"'
+    
     else
         echo "Please Confirm your DNSPOD api settings:"
         echo "ID: ${DP_Id}"
         echo "token: ${DP_Key}"
 
-        read -r -p "Are You Sure? [Yes/No/Abort] " input
+    read -r -p "Are You Sure? [Yes/No] " input
         case $input in
             [yY][eE][sS]|[yY])
                 echo "Continue..."
@@ -29,13 +34,10 @@ do
                 ;;
 
             [nN][oO]|[nN])
-                echo "Try again."
+            echo "Aborted."
+            exit 1
                     ;;
             
-            [aA][bB][oO][rR][tT]|[aA])
-                echo "Aborted."
-                exit 0
-                    ;;
             *)
             echo "Invalid input..."
             echo "Try again."
