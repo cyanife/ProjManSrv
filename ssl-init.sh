@@ -9,20 +9,19 @@ fi
 
 while [ ${finished} = false ]
 do
+    echo "Please input DNSPOD api id: "
+    read -r DP_Id
+    echo "Please input DNSPOD api token: "
+    read -r DP_Key
 
     if [ -z "$DP_Id" ] || [ -z "$DP_Key" ]; then 
-    echo "DNSPOD API token environment variables has not been set!"
-    echo "Please set them manually before initialization."
-    echo "Example:"
-    echo 'export DP_Id="1234"'
-    echo 'export DP_Key="sADDsdasdgdsf"'
-    
+        echo "Invaild input value!"
     else
         echo "Please Confirm your DNSPOD api settings:"
         echo "ID: ${DP_Id}"
         echo "token: ${DP_Key}"
 
-    read -r -p "Are You Sure? [Yes/No] " input
+        read -r -p "Are You Sure? [Yes/No/Abort] " input
         case $input in
             [yY][eE][sS]|[yY])
                 echo "Continue..."
@@ -30,10 +29,13 @@ do
                 ;;
 
             [nN][oO]|[nN])
-            echo "Aborted."
-            exit 1
+                echo "Try again."
                     ;;
             
+            [aA][bB][oO][rR][tT]|[aA])
+                echo "Aborted."
+                exit 0
+                    ;;
             *)
             echo "Invalid input..."
             echo "Try again."
