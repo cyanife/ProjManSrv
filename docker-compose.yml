@@ -75,7 +75,7 @@ services:
         volumes:
             - ./nginx/html:/usr/share/nginx/html
             - ./nginx/conf.d:/etc/nginx/conf.d
-            - ./nginx/acme.sh:/etc/ssl/letsencrypt
+            - ./nginx/acme.sh:/etc/letsencrypt/live
         ports:
             - "80:80/tcp"
             - "443:443/tcp"
