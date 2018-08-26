@@ -62,8 +62,8 @@ services:
             # - MAIL_FROM='Example Wekan Support <support@example.com>'
             - WITH_API=true
             - BROWSER_POLICY_ENABLED=False
-    depends_on:
-      - wekandb
+        depends_on:
+            - wekandb
 
     nginx:
         restart: always 
