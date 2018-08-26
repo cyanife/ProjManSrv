@@ -33,7 +33,7 @@ services:
             - DB_NAME=gitea
             - DB_USER=gitea
             - DB_PASSWORD=password
-            - ROOT_URL=/gitea/
+            # - ROOT_URL=https://gitea.cyanife.com
         networks:
             - internal-tier
             - external-tier
