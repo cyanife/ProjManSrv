@@ -1,39 +1,8 @@
 version: "3"
 services: 
 
-    redmine-postgresql:
-        restart: unless-stopped # always for production
-        image: postgres:latest
-        environment:
-            - POSTGRES_USER=redmine
-            - POSTGRES_PASSWORD=password # change PW here
-            - POSTGRES_DB=redmine_production
-        volumes:
-            - ./data/redmine/postgresql:/var/lib/postgresql/data
-
-    redmine:
-        restart: unless-stopped # always for production 
-        image: sameersbn/redmine:latest
-        depends_on:
-            - redmine-postgresql
-        environment:
-
-            - REDMINE_RELATIVE_URL_ROOT=/redmine
-            - DB_ADAPTER=postgresql
-            - DB_HOST=redmine-postgresql
-            - DB_USER=redmine
-            - DB_PASS=password # change PW here
-            - DB_NAME=redmine_production
-
-            - SMTP_ENABLED=false
-            - SMTP_USER=mailer@example.com
-            - SMTP_PASS=password
-
-        volumes:
-            - ./data/redmine/redmine:/home/redmine/data
-    
     db: # gitea database hostname should be "db"
-        restart: unless-stopped # always for production
+        restart: always # always for production
         image: postgres:latest
         environment:
             - POSTGRES_USER=gitea
@@ -41,14 +10,16 @@ services:
             - POSTGRES_DB=gitea
         volumes:
             - ./data/gitea/postgresql:/var/lib/postgresql/data
+        networks:
+            - internal-tier
 
     gitea:
-        restart: 'unless-stopped'
-        image: 'gitea/gitea:latest'
+        restart: always 
+        image: gitea/gitea:latest
         depends_on:
             - db 
         ports:
-            - '127.0.0.1:10022:22'
+            - 127.0.0.1:10022:22
         volumes:
             - ./data/gitea/gitea:/data
             - /home/git/.ssh:/data/git/.ssh
@@ -61,12 +32,62 @@ services:
             - DB_USER=gitea
             - DB_PASSWORD=password
             - ROOT_URL=/gitea/
+        networks:
+            - internal-tier
+            - external-tier
+
+    wekandb:
+        restart: always
+        image: mongo:latest
+        command: mongod --smallfiles --oplogSize 128
+        networks:
+          - internal-tier 
+        expose:
+          - 27017
+        volumes:
+          - ./data/wekan/db-db:/data/db
+          - ./data/wekan/dump-db-dump:/dump
+
+    wekan:
+        image: quay.io/wekan/wekan
+        container_name: wekan-app
+        restart: always
+        networks:
+            - internal-tier
+            - external-tier
+        environment:
+            - ROOT_URL=https://wekan.cyanife.com
+            - MONGO_URL=mongodb://wekandb:27017/wekan
+            # - MAIL_URL=smtp://user:pass@mailserver.example.com:25/
+            # - MAIL_FROM='Example Wekan Support <support@example.com>'
+            - WITH_API=true
+            - BROWSER_POLICY_ENABLED=False
+    depends_on:
+      - wekandb
 
     nginx:
-        restart: unless-stopped
+        restart: always 
         image: nginx
         volumes:
             - ./nginx/html:/usr/share/nginx/html
-            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./nginx/conf.d:/etc/nginx/conf.d
+            - ./nginx/acme.sh:/etc/ssl/letsencrypt
         ports:
-            - "80:80"
+            - "80:80/tcp"
+            - "443:443/tcp"
+        networks:
+            - internal-tier
+            - external-tier
+
+    acme-sh:
+        image: neilpang/acme.sh
+        command: daemon
+        volumes:
+            - ./nginx/acme.sh:/acme.sh
+
+networks: 
+    external-tier:
+        driver: bridge
+    internal-tier:
+        driver: bridge
+        internal: true
