@@ -9,10 +9,6 @@ fi
 
 while [ ${finished} = false ]
 do
-    echo "Please input DNSPOD api id: "
-    read -r DP_Id
-    echo "Please input DNSPOD api token: "
-    read -r DP_Key
 
     if [ -z "$DP_Id" ] || [ -z "$DP_Key" ]; then 
     echo "DNSPOD API token environment variables has not been set!"
