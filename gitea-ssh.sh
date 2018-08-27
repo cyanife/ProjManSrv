@@ -25,6 +25,7 @@ fi
 sed -i "s/<GIT_UID_PLACEHOLDER>/$(su git -c 'id -u')/" .env
 sed -i "s/<GIT_GID_PLACEHOLDER>/$(su git -c 'id -g')/" .env
 
+chown -R git:git /home/git
 su git -c "mkdir -p /home/git/data"
 su git -c "mkdir -p /home/git/.ssh"
 mkdir -p ./data/gitea/gitea
